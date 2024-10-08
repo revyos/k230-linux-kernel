@@ -257,7 +257,7 @@ config GPIO_DWAPB
 
 config GPIO_K230
 	tristate "GPIO driver for k230"
-	default SOC_CANAAN
+	default ARCH_CANAAN
 	select GPIO_GENERIC
 	select GPIOLIB_IRQCHIP
 	help

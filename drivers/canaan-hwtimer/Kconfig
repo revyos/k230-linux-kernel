@@ -3,6 +3,6 @@ menu "canaan-hwtimer"
 
 config CANAAN_HWTIMER
 	bool "canaan hwtimer driver"
-	default SOC_CANAAN
+	default ARCH_CANAAN
 
 endmenu

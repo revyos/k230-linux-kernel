@@ -4,4 +4,4 @@
 #
 config CLK_K230
 	bool "canaan K230 clk driver support"
-	default SOC_CANAAN
+	default ARCH_CANAAN

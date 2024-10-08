@@ -4,4 +4,4 @@
 #
 config RESET_K230		#config canaan dir enable
 	bool "canaan K230 rst driver support"
-	default SOC_CANAAN
+	default ARCH_CANAAN
