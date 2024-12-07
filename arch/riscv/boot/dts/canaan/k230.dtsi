@@ -23,50 +23,66 @@
 		#size-cells = <0>;
 		timebase-frequency = <27000000>;
 		cpu@0 {
+			compatible = "thead,c908", "riscv";
 			device_type = "cpu";
 			reg = <0>;
-			status = "okay";
-			compatible = "riscv";
-			riscv,isa = "rv64imafdcvxthead_zba_zbb_zbc_zbs_svpbmt_zicbom";
+			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zfh_zba_zbb_zbc_zbs_zvfh_svpbmt";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
+					       "zicbop", "zicboz", "zicntr", "zicsr", "zifencei",
+					       "zihpm", "zfh", "zba", "zbb", "zbc", "zbs", "zvfh",
+					       "svpbmt";
 			riscv,cbom-block-size = <64>;
+			riscv,cbop-block-size = <64>;
+			riscv,cboz-block-size = <64>;
+			d-cache-block-size = <64>;
+			d-cache-sets = <128>;
+			d-cache-size = <32768>;
+			i-cache-block-size = <64>;
+			i-cache-sets = <128>;
+			i-cache-size = <32768>;
+			next-level-cache = <&l2_cache>;
 			mmu-type = "riscv,sv39";
+
 			cpu0_intc: interrupt-controller {
-				#interrupt-cells = <1>;
 				compatible = "riscv,cpu-intc";
 				interrupt-controller;
+				#interrupt-cells = <1>;
 			};
 		};
 
+		l2_cache: l2-cache {
+			compatible = "cache";
+			cache-block-size = <64>;
+			cache-level = <2>;
+			cache-size = <262144>;
+			cache-sets = <256>;
+			cache-unified;
+		};
 	};
 
 	soc {
+		compatible = "simple-bus";
+		interrupt-parent = <&plic>;
 		#address-cells = <2>;
 		#size-cells = <2>;
-		#interrupt-cells = <2>;
 		dma-noncoherent;
-		compatible = "simple-bus";
 		ranges;
 
-
-		clint0: clint@f04000000 {
-			compatible = "thead,c900-clint";
-			interrupts-extended = <
-				&cpu0_intc  3 &cpu0_intc  7
-				>;
-			reg = <0xf 0x04000000 0x0 0x04000000>;
-		};
-
-		intc: interrupt-controller@f00000000 {
-			compatible = "thead,c900-plic";
-			interrupt-controller;
-			interrupts-extended = <
-				&cpu0_intc  11 &cpu0_intc  9
-				>;
+		plic: interrupt-controller@f00000000 {
+			compatible = "canaan,k230-plic" ,"thead,c900-plic";
 			reg = <0xf 0x00000000 0x0 0x04000000>;
-			reg-names = "control";
+			interrupts-extended = <&cpu0_intc 11>, <&cpu0_intc 9>;
+			interrupt-controller;
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
-			riscv,ndev = <200>;
+			riscv,ndev = <208>;
+		};
+
+		clint: timer@f04000000 {
+			compatible = "canaan,k230-clint", "thead,c900-clint";
+			reg = <0xf 0x04000000 0x0 0x00010000>;
+			interrupts-extended = <&cpu0_intc 3>, <&cpu0_intc 7>;
 		};
 
 		dummy_apb: apb-clock {
@@ -86,7 +102,7 @@
 		uart0: serial@91400000 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x0 0x91400000 0x0 0x1000>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <16 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <50000000>;
 			clocks = <&dummy_apb>;
@@ -100,7 +116,7 @@
 		uart1: serial@91401000 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x0 0x91401000 0x0 0x1000>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <17 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <50000000>;
 			clocks = <&dummy_apb>;
@@ -114,7 +130,7 @@
 		uart2: serial@91402000 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x0 0x91402000 0x0 0x1000>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <18 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <50000000>;
 			clocks = <&dummy_apb>;
@@ -128,7 +144,7 @@
 		uart3: serial@91403000 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x0 0x91403000 0x0 0x1000>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <19 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <50000000>;
 			clocks = <&dummy_apb>;
@@ -142,7 +158,7 @@
 		uart4: serial@91404000 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x0 0x91404000 0x0 0x1000>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <20 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <50000000>;
 			clocks = <&dummy_apb>;
@@ -156,7 +172,7 @@
 		mmc_sd0: sdhci0@91580000 {
 			compatible = "kendryte,k230-dw-mshc";
 			reg = <0x0 0x91580000 0x0 0x1000>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <142 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "sdhci0irq";
 			max-frequency = <200000000>;
@@ -168,7 +184,7 @@
 		mmc_sd1: sdhci1@91581000 {
 			compatible = "kendryte,k230-dw-mshc";
 			reg = <0x0 0x91581000 0x0 0x1000>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <144 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "sdhci1irq";
 			clocks = <&dummy_sd>,<&dummy_sd>;
@@ -184,7 +200,7 @@
 			reg = <0x0 0x91584000 0x0 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <146 IRQ_TYPE_LEVEL_HIGH>,<148 IRQ_TYPE_LEVEL_HIGH>,<153 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "spi_txe","spi_rxf","spi_done";
 			rx-sample-delay-ns = <5>;
@@ -198,7 +214,7 @@
 			reg = <0x0 0x91582000 0x0 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <155 IRQ_TYPE_LEVEL_HIGH>,<157 IRQ_TYPE_LEVEL_HIGH>,<162 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "spi_txe","spi_rxf","spi_done";
 			num-cs = <1>;
@@ -209,7 +225,7 @@
 		ipcm: ipcm@91104000 {
 			compatible = "canaan,ipcm-interrupt";
 			reg = <0x0 0x91104000 0x0 0x1000>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <109 IRQ_TYPE_LEVEL_HIGH>,<110 IRQ_TYPE_LEVEL_HIGH>,<111 IRQ_TYPE_LEVEL_HIGH>,<112 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&dummy_apb>;
 			status = "okay";
@@ -225,7 +241,7 @@
 		pmu: pmu@91000000 {
 			compatible = "kendryte, k230-pmu";
 			reg = <0x0 0x91000000 0x0 0xb0>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <175 IRQ_TYPE_LEVEL_HIGH>;
 			status = "disabled";
 			/*
@@ -281,7 +297,7 @@
 		gpu: gpu@90800000 {
 			compatible = "verisilicon,gc8000ul";
 			reg = <0x0 0x90800000 0x0 0x4000>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <135 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
@@ -290,7 +306,7 @@
 			#size-cells = <0>;
 			compatible = "snps,designware-i2c";
 			reg = <0x0 0x91405000 0x0 0x1000>;
-			interrupt-parent    = <&intc>;
+			interrupt-parent    = <&plic>;
 			interrupts          = <21 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <100000>;
 			status = "disabled";
@@ -301,7 +317,7 @@
 			#size-cells = <0>;
 			compatible = "snps,designware-i2c";
 			reg = <0x0 0x91406000 0x0 0x1000>;
-			interrupt-parent    = <&intc>;
+			interrupt-parent    = <&plic>;
 			interrupts          = <22 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <400000>;
 			status = "disabled";
@@ -312,7 +328,7 @@
 			#size-cells = <0>;
 			compatible = "snps,designware-i2c";
 			reg = <0x0 0x91407000 0x0 0x1000>;
-			interrupt-parent    = <&intc>;
+			interrupt-parent    = <&plic>;
 			interrupts          = <23 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <400000>;
 			status = "disabled";
@@ -323,7 +339,7 @@
 			#size-cells = <0>;
 			compatible = "snps,designware-i2c";
 			reg = <0x0 0x91408000 0x0 0x1000>;
-			interrupt-parent    = <&intc>;
+			interrupt-parent    = <&plic>;
 			interrupts          = <24 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <400000>;
 			status = "disabled";
@@ -334,7 +350,7 @@
 			#size-cells = <0>;
 			compatible = "snps,designware-i2c";
 			reg = <0x0 0x91409000 0x0 0x1000>;
-			interrupt-parent    = <&intc>;
+			interrupt-parent    = <&plic>;
 			interrupts          = <25 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <400000>;
 			status = "disabled";
@@ -343,7 +359,7 @@
 		usbotg0: usb-otg@91500000 {
 			compatible = "kendryte,k230-otg";
 			reg = <0x0 0x91500000 0x0 0x10000>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <173 IRQ_TYPE_LEVEL_HIGH>;
 			g-rx-fifo-size = <512>;
 			g-np-tx-fifo-size = <64>;
@@ -356,7 +372,7 @@
 		usbotg1: usb-otg@91540000 {
 			compatible = "kendryte,k230-otg";
 			reg = <0x0 0x91540000 0x0 0x10000>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <174 IRQ_TYPE_LEVEL_HIGH>;
 			g-rx-fifo-size = <512>;
 			g-np-tx-fifo-size = <64>;
@@ -460,7 +476,7 @@
 		watchdog0: wdt0@91106000 {
 			compatible = "snps,dw-wdt";
 			reg = <0x0 0x91106000 0x0 0x800>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <107 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
@@ -510,14 +526,14 @@
 			status              = "disabled";
 			compatible          = "canaan,i2s-ws2812";
 			reg                 = <0x0 0x9140F000 0x0 0x1000>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts          = <96 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
 		vo: vo@90840000 {
 			compatible = "canaan,k230-vo";
 			reg = <0x0 0x90840000 0x0 0x10000 >;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&plic>;
 			interrupts = <133 IRQ_TYPE_LEVEL_HIGH>;
 			status = "okay";
 
